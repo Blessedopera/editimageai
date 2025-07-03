@@ -502,7 +502,4 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Professional Headshot API is running' });
 });
 
-app.listen(port, () => {
-  console.log(`Professional Headshot App running at http://localhost:${port}`);
-  console.log('Make sure to set your REPLICATE_API_TOKEN and Supabase credentials in the .env file');
-});
+export default app;
