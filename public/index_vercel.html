@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Headshot Generator</title>
+    <style>
+    /* ... (all your CSS remains unchanged) ... */
+    </style>
+</head>
+<body>
+    <!-- ... (all your HTML remains unchanged) ... -->
+    <script>
+    let currentUser = null;
+    let authToken = null;
+    let selectedPlan = null;
+
+    // Check if user is already logged in
+    document.addEventListener('DOMContentLoaded', function() {
+    checkAuthStatus();
+    setupEventListeners();
+    });
+
+    function setupEventListeners() {
+    // ... (unchanged) ...
+    }
+
+    async function checkAuthStatus() {
+    try {
+    const response = await fetch('/api/server/api/user/profile', {
+    credentials: 'include'
+    });
+    // ... (unchanged) ...
+    }
+    }
+
+    async function login() {
+    // ... (unchanged) ...
+    try {
+    const response = await fetch('/api/server/auth/login', {
+    method: 'POST',
+    headers: {
+    'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ email, password })
+    });
+    // ... (unchanged) ...
+    }
+    }
+
+    async function signup() {
+    // ... (unchanged) ...
+    try {
+    const response = await fetch('/api/server/auth/signup', {
+    method: 'POST',
+    headers: {
+    'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ email, password, fullName })
+    });
+    // ... (unchanged) ...
+    }
+    }
+
+    async function logout() {
+    try {
+    await fetch('/api/server/auth/logout', {
+    method: 'POST',
+    credentials: 'include'
+    });
+    // ... (unchanged) ...
+    }
+    }
+
+    async function purchaseCredits() {
+    // ... (unchanged) ...
+    try {
+    const response = await fetch('/api/server/api/credits/purchase', {
+    method: 'POST',
+    headers: {
+    'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({
+    amount: selectedPlan.credits,
+    plan: selectedPlan.name
+    })
+    });
+    // ... (unchanged) ...
+    }
+    }
+
+    async function generateHeadshot(e) {
+    e.preventDefault();
+    // ... (unchanged) ...
+    try {
+    const response = await fetch('/api/server/generate-headshot', {
+    method: 'POST',
+    credentials: 'include',
+    body: formData
+    });
+    // ... (unchanged) ...
+    }
+    }
+
+    async function loadUserHistory() {
+    try {
+    const response = await fetch('/api/server/api/user/history', {
+    credentials: 'include'
+    });
+    // ... (unchanged) ...
+    }
+    }
+    // ... (rest of the JS unchanged) ...
+    </script>
+</body>
+</html> 
