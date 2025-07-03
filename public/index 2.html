@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Headshot Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .auth-section, .app-section {
+            display: none;
+        }
+
+        .auth-section.active, .app-section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #e1e5e9;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .user-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .credits {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .email {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .upload-area {
+            border: 3px dashed #e1e5e9;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .result-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .result-image {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #c33;
+        }
+
+        .success {
+            background: #efe;
+            color: #363;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #363;
+        }
+
+        .auth-toggle {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .auth-toggle a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-toggle a:hover {
+            text-decoration: underline;
+        }
+
+        .credit-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .credit-option {
+            background: #f8f9fa;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .credit-option:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .credit-option.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .credit-amount {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .credit-price {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📸 HeadShot Pro</h1>
+            <p>Transform your photos into professional headshots</p>
+        </div>
+
+        <!-- Authentication Section -->
+        <div id="authSection" class="auth-section active">
+            <div id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email:</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password:</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button class="btn btn-primary" onclick="signIn()">Sign In</button>
+                <div class="auth-toggle">
+                    <a href="#" onclick="toggleAuthMode()">Don't have an account? Sign up</a>
+                </div>
+            </div>
+
+            <div id="signupForm" style="display: none;">
+                <div class="form-group">
+                    <label for="signupEmail">Email:</label>
+                    <input type="email" id="signupEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password:</label>
+                    <input type="password" id="signupPassword" required>
+                </div>
+                <button class="btn btn-primary" onclick="signUp()">Sign Up</button>
+                <div class="auth-toggle">
+                    <a href="#" onclick="toggleAuthMode()">Already have an account? Sign in</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App Section -->
+        <div id="appSection" class="app-section">
+            <div class="user-info">
+                <div class="credits" id="creditsDisplay">Credits: 0</div>
+                <div class="email" id="userEmail"></div>
+                <button class="btn btn-secondary" onclick="showBuyCreditsModal()" style="margin: 10px 5px 0 0; width: auto; display: inline-block;">Buy Credits</button>
+                <button class="btn btn-secondary" onclick="signOut()" style="margin: 10px 0 0 5px; width: auto; display: inline-block;">Sign Out</button>
+            </div>
+
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('imageInput').click()">
+                <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+                <div id="uploadText">
+                    <h3>📁 Choose or drag your photo here</h3>
+                    <p>Supported formats: JPG, PNG, WEBP</p>
+                </div>
+                <img id="previewImage" class="preview-image" style="display: none;">
+            </div>
+
+            <button class="btn btn-primary" id="generateBtn" onclick="generateHeadshot()" disabled>
+                Generate Professional Headshot
+            </button>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Generating your professional headshot...</p>
+            </div>
+
+            <div class="result-section" id="resultSection" style="display: none;">
+                <h3>Your Professional Headshot:</h3>
+                <img id="resultImage" class="result-image">
+                <br><br>
+                <a id="downloadLink" class="btn btn-secondary" download="professional-headshot.jpg">Download Image</a>
+            </div>
+        </div>
+
+        <div id="messageArea"></div>
+    </div>
+
+    <!-- Buy Credits Modal -->
+    <div id="buyCreditsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeBuyCreditsModal()">&times;</span>
+            <h2>Buy Credits</h2>
+            <p>Select how many credits you'd like to purchase:</p>
+
+            <div class="credit-options">
+                <div class="credit-option" onclick="selectCreditOption(5, 4.99)" data-amount="5">
+                    <div class="credit-amount">5</div>
+                    <div class="credit-price">$4.99</div>
+                </div>
+                <div class="credit-option" onclick="selectCreditOption(10, 8.99)" data-amount="10">
+                    <div class="credit-amount">10</div>
+                    <div class="credit-price">$8.99</div>
+                </div>
+                <div class="credit-option" onclick="selectCreditOption(25, 19.99)" data-amount="25">
+                    <div class="credit-amount">25</div>
+                    <div class="credit-price">$19.99</div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="purchaseBtn" onclick="purchaseCredits()" disabled>
+                Purchase Credits
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let authToken = null;
+        let selectedFile = null;
+        let selectedCreditAmount = 0;
+
+        // Check if user is already logged in
+        window.onload = function() {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                authToken = token;
+                loadUserProfile();
+            }
+        };
+
+        function toggleAuthMode() {
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+
+            if (loginForm.style.display === 'none') {
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'none';
+            } else {
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'block';
+            }
+        }
+
+        async function signUp() {
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+
+            if (!email || !password) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('Account created successfully! You can now sign in.', 'success');
+                    toggleAuthMode(); // Switch to login form
+                } else {
+                    showMessage(data.error || 'Failed to create account', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error. Please try again.', 'error');
+            }
+        }
+
+        async function signIn() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/signin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    authToken = data.session.access_token;
+                    localStorage.setItem('authToken', authToken);
+                    currentUser = data.user;
+
+                    document.getElementById('authSection').classList.remove('active');
+                    document.getElementById('appSection').classList.add('active');
+
+                    loadUserProfile();
+                    showMessage('Welcome back!', 'success');
+                } else {
+                    showMessage(data.error || 'Failed to sign in', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error. Please try again.', 'error');
+            }
+        }
+
+        async function loadUserProfile() {
+            try {
+                const response = await fetch('/api/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('creditsDisplay').textContent = `Credits: ${data.credits}`;
+                    document.getElementById('userEmail').textContent = data.email;
+
+                    document.getElementById('authSection').classList.remove('active');
+                    document.getElementById('appSection').classList.add('active');
+                } else {
+                    showMessage(data.error || 'Failed to load profile', 'error');
+                    signOut();
+                }
+            } catch (error) {
+                showMessage('Network error. Please try again.', 'error');
+                signOut();
+            }
+        }
+
+        async function signOut() {
+            try {
+                await fetch('/api/signout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                });
+            } catch (error) {
+                console.error('Signout error:', error);
+            }
+
+            authToken = null;
+            currentUser = null;
+            localStorage.removeItem('authToken');
+
+            document.getElementById('appSection').classList.remove('active');
+            document.getElementById('authSection').classList.add('active');
+
+            // Reset form
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('signupEmail').value = '';
+            document.getElementById('signupPassword').value = '';
+
+            showMessage('Signed out successfully', 'success');
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewImage = document.getElementById('previewImage');
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+
+                    document.getElementById('uploadText').style.display = 'none';
+                    document.getElementById('generateBtn').disabled = false;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Drag and drop functionality
+        const uploadArea = document.getElementById('uploadArea');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    document.getElementById('imageInput').files = files;
+                    handleFileSelect({ target: { files: files } });
+                }
+            }
+        });
+
+        async function generateHeadshot() {
+            if (!selectedFile) {
+                showMessage('Please select an image first', 'error');
+                return;
+            }
+
+            const generateBtn = document.getElementById('generateBtn');
+            const loading = document.getElementById('loading');
+
+            generateBtn.disabled = true;
+            loading.classList.add('active');
+
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const resultSection = document.getElementById('resultSection');
+                    const resultImage = document.getElementById('resultImage');
+                    const downloadLink = document.getElementById('downloadLink');
+
+                    resultImage.src = data.output[0];
+                    downloadLink.href = data.output[0];
+                    resultSection.style.display = 'block';
+
+                    // Update credits display
+                    document.getElementById('creditsDisplay').textContent = `Credits: ${data.remaining_credits}`;
+
+                    showMessage('Professional headshot generated successfully!', 'success');
+                } else {
+                    showMessage(data.error || 'Failed to generate headshot', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error. Please try again.', 'error');
+            } finally {
+                generateBtn.disabled = false;
+                loading.classList.remove('active');
+            }
+        }
+
+        function showBuyCreditsModal() {
+            document.getElementById('buyCreditsModal').classList.add('active');
+        }
+
+        function closeBuyCreditsModal() {
+            document.getElementById('buyCreditsModal').classList.remove('active');
+            // Reset selection
+            document.querySelectorAll('.credit-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            document.getElementById('purchaseBtn').disabled = true;
+            selectedCreditAmount = 0;
+        }
+
+        function selectCreditOption(amount, price) {
+            // Remove previous selection
+            document.querySelectorAll('.credit-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+
+            // Select current option
+            event.target.closest('.credit-option').classList.add('selected');
+            selectedCreditAmount = amount;
+            document.getElementById('purchaseBtn').disabled = false;
+        }
+
+        async function purchaseCredits() {
+            if (selectedCreditAmount === 0) {
+                showMessage('Please select a credit package', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/buy-credits', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                    body: JSON.stringify({ amount: selectedCreditAmount }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('creditsDisplay').textContent = `Credits: ${data.credits}`;
+                    closeBuyCreditsModal();
+                    showMessage(`Successfully purchased ${selectedCreditAmount} credits!`, 'success');
+                } else {
+                    showMessage(data.error || 'Failed to purchase credits', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error. Please try again.', 'error');
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageArea = document.getElementById('messageArea');
+            messageArea.innerHTML = `<div class="${type}">${message}</div>`;
+
+            setTimeout(() => {
+                messageArea.innerHTML = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

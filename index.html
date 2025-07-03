@@ -1,0 +1,446 @@
+# Create the index.html file content for easy copying
+html_content = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Headshot Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            padding: 40px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+        }
+
+        .upload-area {
+            border: 3px dashed #4facfe;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .upload-area:hover {
+            border-color: #00f2fe;
+            background: #f0f9ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #00f2fe;
+            background: #e0f2fe;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #4facfe;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .generate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+
+        .generate-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .result-section {
+            text-align: center;
+        }
+
+        .result-area {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .result-image {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .loading {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            color: #e74c3c;
+            background: #fdf2f2;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .success {
+            color: #27ae60;
+            background: #f0f9f4;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #27ae60;
+        }
+
+        .download-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: #219a52;
+            transform: translateY(-2px);
+        }
+
+        .preview-image {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 10px;
+            margin-top: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Professional Headshot Generator</h1>
+            <p>Transform any photo into a stunning professional headshot using AI</p>
+        </div>
+
+        <div class="main-content">
+            <div class="upload-section">
+                <h2>Upload Your Photo</h2>
+                <form id="headshotForm" enctype="multipart/form-data">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📸</div>
+                        <h3>Drop your image here or click to browse</h3>
+                        <p>Supports JPG, PNG, WebP, GIF (max 10MB)</p>
+                        <input type="file" id="imageInput" name="image" accept="image/*" style="display: none;">
+                    </div>
+                    <div id="imagePreview"></div>
+
+                    <div class="form-group">
+                        <label for="gender">Gender (Optional)</label>
+                        <select id="gender" name="gender">
+                            <option value="none">Auto-detect</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="background">Background Style</label>
+                        <select id="background" name="background">
+                            <option value="neutral">Neutral</option>
+                            <option value="white">White</option>
+                            <option value="black">Black</option>
+                            <option value="gray">Gray</option>
+                            <option value="office">Office</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aspectRatio">Aspect Ratio</label>
+                        <select id="aspectRatio" name="aspectRatio">
+                            <option value="1:1">Square (1:1)</option>
+                            <option value="4:3">Standard (4:3)</option>
+                            <option value="3:4">Portrait (3:4)</option>
+                            <option value="16:9">Wide (16:9)</option>
+                            <option value="9:16">Tall (9:16)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="seed">Seed (Optional)</label>
+                        <input type="number" id="seed" name="seed" placeholder="Leave empty for random results">
+                    </div>
+
+                    <button type="submit" class="generate-btn" id="generateBtn">
+                        Generate Professional Headshot
+                    </button>
+                </form>
+            </div>
+
+            <div class="result-section">
+                <h2>Your Professional Headshot</h2>
+                <div class="result-area" id="resultArea">
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p>Generating your professional headshot...</p>
+                        <p><small>This may take 10-30 seconds</small></p>
+                    </div>
+                    <div id="resultContent">
+                        <p>Your generated headshot will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const form = document.getElementById('headshotForm');
+        const generateBtn = document.getElementById('generateBtn');
+        const loading = document.getElementById('loading');
+        const resultContent = document.getElementById('resultContent');
+
+        // File upload handling
+        uploadArea.addEventListener('click', () => imageInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                imageInput.files = files;
+                handleImagePreview(files[0]);
+            }
+        });
+
+        imageInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleImagePreview(e.target.files[0]);
+            }
+        });
+
+        function handleImagePreview(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview" class="preview-image">
+                    <p><strong>Selected:</strong> ${file.name}</p>
+                `;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!imageInput.files[0]) {
+                alert('Please select an image first!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+            formData.append('gender', document.getElementById('gender').value);
+            formData.append('background', document.getElementById('background').value);
+            formData.append('aspectRatio', document.getElementById('aspectRatio').value);
+            formData.append('seed', document.getElementById('seed').value);
+
+            // Show loading state
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+            loading.style.display = 'flex';
+            resultContent.innerHTML = '';
+
+            try {
+                const response = await fetch('/generate-headshot', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    resultContent.innerHTML = `
+                        <img src="${result.imageUrl}" alt="Professional Headshot" class="result-image">
+                        <button class="download-btn" onclick="downloadImage('${result.imageUrl}')">
+                            Download Headshot
+                        </button>
+                        <div class="success">${result.message}</div>
+                    `;
+                } else {
+                    resultContent.innerHTML = `
+                        <div class="error">
+                            <strong>Error:</strong> ${result.error}
+                            ${result.details ? `<br><small>${result.details}</small>` : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultContent.innerHTML = `
+                    <div class="error">
+                        <strong>Network Error:</strong> Failed to connect to the server.
+                        <br><small>${error.message}</small>
+                    </div>
+                `;
+            } finally {
+                // Hide loading state
+                loading.style.display = 'none';
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate Professional Headshot';
+            }
+        });
+
+        function downloadImage(url) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `professional-headshot-${Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>"""
+
+# Save the HTML content to a file for easy copying
+with open('index.html', 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print("✅ HTML content ready to copy!")
+print("\nCopy ALL the code above and paste it into your blank index.html file")
+print("Make sure to:")
+print("1. Select ALL the code (Ctrl+A)")
+print("2. Copy it (Ctrl+C)")
+print("3. Paste it into your blank index.html file (Ctrl+V)")
+print("4. Save the file (Ctrl+S)")
