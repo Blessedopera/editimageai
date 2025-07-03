@@ -212,3 +212,4 @@ app.post('/api/stripe/webhook', express.raw({type: 'application/json'}), (req, r
   res.status(200).send('Webhook received');
 });
 // ... rest of the code unchanged ... 
+export default app;
