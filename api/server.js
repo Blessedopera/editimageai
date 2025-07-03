@@ -502,4 +502,8 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Professional Headshot API is running' });
 });
 
+<<<<<<< HEAD
 export default app;
+=======
+export default app;
+>>>>>>> 34456be06afe32ea843ef5b8114cbcc3c9f5b880
