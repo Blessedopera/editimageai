@@ -1259,6 +1259,10 @@
     </div>
     `).join('');
     }
+
+    function showMessage(element, message, type) {
+    element.innerHTML = `<div class="${type}">${message}</div>`;
+    }
     </script>
 </body>
 </html>
