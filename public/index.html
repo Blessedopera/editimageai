@@ -879,11 +879,7 @@
 
     async function checkAuthStatus() {
     try {
-<<<<<<< HEAD
     const response = await fetch('/api/auth/profile', {
-=======
-    const response = await fetch('/api/server/api/user/profile', {
->>>>>>> 34456be06afe32ea843ef5b8114cbcc3c9f5b880
     credentials: 'include'
     });
 
@@ -944,11 +940,7 @@
     }
 
     try {
-<<<<<<< HEAD
     const response = await fetch('/api/auth/login', {
-=======
-    const response = await fetch('/api/server/auth/login', {
->>>>>>> 34456be06afe32ea843ef5b8114cbcc3c9f5b880
     method: 'POST',
     headers: {
     'Content-Type': 'application/json',
@@ -988,11 +980,7 @@
     }
 
     try {
-<<<<<<< HEAD
     const response = await fetch('/api/auth/signup', {
-=======
-    const response = await fetch('/api/server/auth/signup', {
->>>>>>> 34456be06afe32ea843ef5b8114cbcc3c9f5b880
     method: 'POST',
     headers: {
     'Content-Type': 'application/json',
@@ -1022,11 +1010,7 @@
 
     async function logout() {
     try {
-<<<<<<< HEAD
     await fetch('/api/auth/logout', {
-=======
-    await fetch('/api/server/auth/logout', {
->>>>>>> 34456be06afe32ea843ef5b8114cbcc3c9f5b880
     method: 'POST',
     credentials: 'include'
     });
@@ -1111,11 +1095,7 @@
     purchaseBtn.textContent = 'Processing...';
 
     try {
-<<<<<<< HEAD
     const response = await fetch('/api/auth/purchase', {
-=======
-    const response = await fetch('/api/server/api/credits/purchase', {
->>>>>>> 34456be06afe32ea843ef5b8114cbcc3c9f5b880
     method: 'POST',
     headers: {
     'Content-Type': 'application/json',
@@ -1197,11 +1177,7 @@
     resultContent.innerHTML = '';
 
     try {
-<<<<<<< HEAD
     const response = await fetch('/api/auth/generate-headshot', {
-=======
-    const response = await fetch('/api/server/generate-headshot', {
->>>>>>> 34456be06afe32ea843ef5b8114cbcc3c9f5b880
     method: 'POST',
     credentials: 'include',
     body: formData
@@ -1252,11 +1228,7 @@
 
     async function loadUserHistory() {
     try {
-<<<<<<< HEAD
     const response = await fetch('/api/auth/history', {
-=======
-    const response = await fetch('/api/server/api/user/history', {
->>>>>>> 34456be06afe32ea843ef5b8114cbcc3c9f5b880
     credentials: 'include'
     });
 
