@@ -789,7 +789,7 @@
     <div class="value">$0.33 per credit</div>
     </div>
 
-    <div class="credit-plan" data-plan="pro" data-credits="150" data-price="39.99">
+    <div class="credit-plan" data-plan="professional" data-credits="150" data-price="39.99">
     <h4>Professional</h4>
     <div class="price">$39.99</div>
     <div class="credits">150 Credits</div>
@@ -804,14 +804,21 @@
     </div>
     </div>
 
+    <div class="form-group">
+    <label for="creditQuantity">Quantity</label>
+    <input type="number" id="creditQuantity" min="1" value="1" style="width: 100px;">
+    </div>
+
     <button class="purchase-btn" id="purchaseBtn" onclick="purchaseCredits()" disabled>
     Select a Plan
     </button>
     <div id="purchaseMessage"></div>
+    <div id="stripeCheckout" style="margin-top: 30px;"></div>
     </div>
     </div>
     </div>
 
+    <script src="https://js.stripe.com/v3/"></script>
     <script>
     let currentUser = null;
     let authToken = null;
@@ -1087,41 +1094,33 @@
 
     async function purchaseCredits() {
     if (!selectedPlan) return;
-
     const messageDiv = document.getElementById('purchaseMessage');
     const purchaseBtn = document.getElementById('purchaseBtn');
-
+    const quantity = parseInt(document.getElementById('creditQuantity').value) || 1;
     purchaseBtn.disabled = true;
     purchaseBtn.textContent = 'Processing...';
-
+    messageDiv.innerHTML = '';
+    document.getElementById('stripeCheckout').innerHTML = '';
     try {
-    const response = await fetch('/api/auth/purchase', {
+    const response = await fetch('/api/auth/create-checkout-session', {
     method: 'POST',
-    headers: {
-    'Content-Type': 'application/json',
-    },
-    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-    amount: selectedPlan.credits,
-    plan: selectedPlan.name
+    plan: selectedPlan.name,
+    quantity,
+    email: currentUser?.email
     })
     });
-
     const data = await response.json();
-
-    if (data.success) {
-    showMessage(messageDiv, data.message, 'success');
-
-    // Update user credits
-    currentUser.credits = data.newBalance;
-    document.getElementById('creditsCount').textContent = currentUser.credits;
-    document.getElementById('dashboardCredits').textContent = currentUser.credits;
-
-    setTimeout(() => {
-    closeBuyCredits();
-    }, 2000);
+    if (data.clientSecret) {
+    // Mount Stripe embedded checkout
+    const stripe = Stripe('pk_test_51OEhsXC5gE6T33JWgEV9xpVm24wbBsvJ4bRhzYBeGEm4DzeEvv15dionWp3irugJn3WxK8PHZbK2sEIAUOhSBfmh00PPj1AuOC');
+    const fetchClientSecret = async () => data.clientSecret;
+    const checkout = await stripe.initEmbeddedCheckout({ fetchClientSecret });
+    checkout.mount('#stripeCheckout');
+    purchaseBtn.textContent = 'Complete Payment Below';
     } else {
-    showMessage(messageDiv, data.error, 'error');
+    showMessage(messageDiv, data.error || 'Failed to start payment.', 'error');
     purchaseBtn.disabled = false;
     purchaseBtn.textContent = `Purchase ${selectedPlan.credits} Credits - $${selectedPlan.price}`;
     }
@@ -1252,31 +1251,13 @@
 
     historyList.innerHTML = history.map(item => `
     <div class="history-item">
-    ${item.image_url ? `<img src="${item.image_url}" alt="Generated headshot" class="history-image">` : '<div class="history-image" style="background: #f0f0f0; display: flex; align-items: center; justify-content: center;">❌</div>'}
+    <img src="${item.imageUrl}" alt="Headshot" class="history-image">
     <div class="history-details">
-    <div class="history-date">${new Date(item.created_at).toLocaleDateString()}</div>
-    <div class="history-params">
-    Background: ${item.parameters?.background || 'N/A'} | 
-    Ratio: ${item.parameters?.aspectRatio || 'N/A'} | 
-    Status: ${item.status}
+    <p class="history-date">${item.createdAt}</p>
+    <p class="history-params">${item.params}</p>
     </div>
-    </div>
-    ${item.image_url ? `<button class="download-btn" onclick="downloadImage('${item.image_url}')">Download</button>` : ''}
     </div>
     `).join('');
-    }
-
-    function downloadImage(url) {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `professional-headshot-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    }
-
-    function showMessage(container, message, type) {
-    container.innerHTML = `<div class="${type}">${message}</div>`;
     }
     </script>
 </body>
