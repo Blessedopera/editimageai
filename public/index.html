@@ -1251,13 +1251,20 @@
 
     historyList.innerHTML = history.map(item => `
     <div class="history-item">
-    <img src="${item.imageUrl}" alt="Headshot" class="history-image">
+    <img src="${item.image_url}" alt="Headshot" class="history-image">
     <div class="history-details">
-    <p class="history-date">${item.createdAt}</p>
-    <p class="history-params">${item.params}</p>
+    <p class="history-date">${new Date(item.created_at).toLocaleString()}</p>
+    <p class="history-params">${formatParams(item.parameters)}</p>
     </div>
     </div>
     `).join('');
+    }
+
+    function formatParams(params) {
+    if (!params) return '';
+    return Object.entries(params)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join(', ');
     }
 
     function showMessage(element, message, type) {
