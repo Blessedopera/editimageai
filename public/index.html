@@ -879,7 +879,7 @@
 
     async function checkAuthStatus() {
     try {
-    const response = await fetch('/api/user/profile', {
+    const response = await fetch('/api/server/api/user/profile', {
     credentials: 'include'
     });
 
@@ -940,7 +940,7 @@
     }
 
     try {
-    const response = await fetch('/auth/login', {
+    const response = await fetch('/api/server/auth/login', {
     method: 'POST',
     headers: {
     'Content-Type': 'application/json',
@@ -980,7 +980,7 @@
     }
 
     try {
-    const response = await fetch('/auth/signup', {
+    const response = await fetch('/api/server/auth/signup', {
     method: 'POST',
     headers: {
     'Content-Type': 'application/json',
@@ -1010,7 +1010,7 @@
 
     async function logout() {
     try {
-    await fetch('/auth/logout', {
+    await fetch('/api/server/auth/logout', {
     method: 'POST',
     credentials: 'include'
     });
@@ -1095,7 +1095,7 @@
     purchaseBtn.textContent = 'Processing...';
 
     try {
-    const response = await fetch('/api/credits/purchase', {
+    const response = await fetch('/api/server/api/credits/purchase', {
     method: 'POST',
     headers: {
     'Content-Type': 'application/json',
@@ -1177,7 +1177,7 @@
     resultContent.innerHTML = '';
 
     try {
-    const response = await fetch('/generate-headshot', {
+    const response = await fetch('/api/server/generate-headshot', {
     method: 'POST',
     credentials: 'include',
     body: formData
@@ -1228,7 +1228,7 @@
 
     async function loadUserHistory() {
     try {
-    const response = await fetch('/api/user/history', {
+    const response = await fetch('/api/server/api/user/history', {
     credentials: 'include'
     });
 
