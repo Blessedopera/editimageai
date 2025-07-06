@@ -1,4 +1,4 @@
--- Supabase Database Schema
+-- Supabase Database Schema for AI Image Editor
 -- Run these SQL commands in your Supabase SQL Editor
 
 -- 1. Create users table (extends Supabase auth.users)
@@ -12,12 +12,12 @@ CREATE TABLE public.user_profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 2. Create usage tracking table
-CREATE TABLE public.headshot_generations (
+-- 2. Create usage tracking table for image edits
+CREATE TABLE public.image_edits (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) NOT NULL,
   image_url TEXT,
-  parameters JSONB, -- Store generation parameters
+  parameters JSONB, -- Store generation parameters (prompt, output_format)
   credits_used INTEGER DEFAULT 1,
   status TEXT DEFAULT 'completed', -- completed, failed, processing
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -35,7 +35,7 @@ CREATE TABLE public.credit_transactions (
 
 -- 4. Enable Row Level Security (RLS)
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.headshot_generations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.image_edits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.credit_transactions ENABLE ROW LEVEL SECURITY;
 
 -- 5. Create RLS Policies
@@ -46,11 +46,11 @@ CREATE POLICY "Users can view own profile" ON public.user_profiles
 CREATE POLICY "Users can update own profile" ON public.user_profiles
   FOR UPDATE USING (auth.uid() = id);
 
--- Users can only see their own generations
-CREATE POLICY "Users can view own generations" ON public.headshot_generations
+-- Users can only see their own image edits
+CREATE POLICY "Users can view own image edits" ON public.image_edits
   FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert own generations" ON public.headshot_generations
+CREATE POLICY "Users can insert own image edits" ON public.image_edits
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Users can only see their own transactions

@@ -10,6 +10,7 @@ import { createClient } from '@supabase/supabase-js';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
+import Stripe from 'stripe';
 
 dotenv.config();
 
@@ -30,6 +31,16 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
+// Initialize Stripe
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+const PLANS = {
+  starter: { priceId: 'price_1Rgk1nC5gE6T33JWRicQl74o', credits: 25 },
+  popular: { priceId: 'price_1Rgk3HC5gE6T33JWYFZVxoxi', credits: 60 },
+  professional: { priceId: 'price_1Rgk4bC5gE6T33JW48SDYiOb', credits: 150 },
+  business: { priceId: 'price_1Rgk65C5gE6T33JW65ZYnuu5', credits: 300 },
+};
+
 // Add anon key client for Auth
 const supabaseAnon = createClient(
   process.env.SUPABASE_URL,
@@ -38,7 +49,9 @@ const supabaseAnon = createClient(
 
 // Middleware
 app.use(cors({
-  origin: true,
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://editimageai.vercel.app', 'https://editimageai-git-main-blessedopera.vercel.app']
+    : true,
   credentials: true
 }));
 app.use(express.json());
@@ -47,7 +60,10 @@ app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production', 
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
 }));
 app.use(express.static('public'));
 
@@ -118,7 +134,7 @@ app.get('/', (req, res) => {
 });
 
 // Authentication routes
-app.post('/auth/signup', async (req, res) => {
+app.post('/api/auth/signup', async (req, res) => {
   try {
     const { email, password, fullName } = req.body;
 
@@ -230,7 +246,7 @@ app.post('/auth/signup', async (req, res) => {
   }
 });
 
-app.post('/auth/login', async (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -291,13 +307,13 @@ app.post('/auth/login', async (req, res) => {
   }
 });
 
-app.post('/auth/logout', (req, res) => {
+app.post('/api/auth/logout', (req, res) => {
   res.clearCookie('auth_token');
   res.json({ success: true, message: 'Logged out successfully' });
 });
 
 // User profile routes
-app.get('/api/user/profile', authenticateUser, async (req, res) => {
+app.get('/api/auth/profile', authenticateUser, async (req, res) => {
   try {
     const { data: profile, error } = await supabase
     .from('user_profiles')
@@ -326,8 +342,8 @@ app.get('/api/user/profile', authenticateUser, async (req, res) => {
   }
 });
 
-// Credit management routes
-app.post('/api/credits/purchase', authenticateUser, async (req, res) => {
+// Credit management routes - Direct purchase (no Stripe)
+app.post('/api/auth/purchase', authenticateUser, async (req, res) => {
   try {
     const { amount, plan } = req.body;
 
@@ -340,7 +356,7 @@ app.post('/api/credits/purchase', authenticateUser, async (req, res) => {
     user_uuid: req.user.id,
     credit_change: amount,
     transaction_type: 'purchase',
-    description: `Purchased ${amount} credits - ${plan} plan`
+    description: `Purchased ${amount} credits - ${plan} plan (TEST MODE)`
     });
 
     if (error || !data) {
@@ -356,10 +372,22 @@ app.post('/api/credits/purchase', authenticateUser, async (req, res) => {
     })
     .eq('id', req.user.id);
 
+    // Get updated user profile
+    const { data: updatedUser, error: userError } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('id', req.user.id)
+    .single();
+
+    if (userError) {
+    console.error('User fetch error:', userError);
+    }
+
     res.json({
     success: true,
-    message: `Successfully purchased ${amount} credits!`,
-    newBalance: req.user.credits + amount
+    message: `Successfully purchased ${amount} credits! (TEST MODE - No payment required)`,
+    newBalance: updatedUser?.credits || req.user.credits + amount,
+    user: updatedUser
     });
 
   } catch (error) {
@@ -368,10 +396,10 @@ app.post('/api/credits/purchase', authenticateUser, async (req, res) => {
   }
 });
 
-app.get('/api/user/history', authenticateUser, async (req, res) => {
+app.get('/api/auth/history', authenticateUser, async (req, res) => {
   try {
-    const { data: generations, error } = await supabase
-    .from('headshot_generations')
+    const { data: edits, error } = await supabase
+    .from('image_edits')
     .select('*')
     .eq('user_id', req.user.id)
     .order('created_at', { ascending: false })
@@ -383,7 +411,7 @@ app.get('/api/user/history', authenticateUser, async (req, res) => {
 
     res.json({
     success: true,
-    history: generations
+    history: edits
     });
   } catch (error) {
     console.error('History fetch error:', error);
@@ -391,8 +419,110 @@ app.get('/api/user/history', authenticateUser, async (req, res) => {
   }
 });
 
-// Headshot generation route (protected)
-app.post('/generate-headshot', authenticateUser, upload.single('image'), async (req, res) => {
+// Stripe checkout session route
+app.post('/api/auth/create-checkout-session', async (req, res) => {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  
+  const { plan, quantity = 1, email } = req.body;
+  
+  if (!PLANS[plan] || !quantity || quantity < 1) {
+    return res.status(400).json({ error: 'Invalid plan or quantity' });
+  }
+  
+  try {
+    const session = await stripe.checkout.sessions.create({
+      ui_mode: 'embedded',
+      line_items: [
+        {
+          price: PLANS[plan].priceId,
+          quantity,
+        },
+      ],
+      mode: 'payment',
+      return_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/return.html?session_id={CHECKOUT_SESSION_ID}`,
+      customer_email: email || undefined,
+      metadata: {
+        plan,
+        credits: PLANS[plan].credits,
+        quantity,
+      },
+    });
+    res.status(200).json({ clientSecret: session.client_secret });
+  } catch (err) {
+    console.error('Stripe checkout error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Stripe webhook route
+app.post('/api/auth/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error('Webhook signature verification failed.', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const email = session.customer_details?.email;
+    const plan = session.metadata?.plan;
+    const credits = parseInt(session.metadata?.credits || '0', 10);
+    const quantity = parseInt(session.metadata?.quantity || '1', 10);
+    
+    if (email && credits && quantity) {
+      try {
+        const { data: user, error } = await supabase
+          .from('user_profiles')
+          .select('id, credits')
+          .eq('email', email)
+          .single();
+        
+        if (!user) throw new Error('User not found');
+        
+        const newCredits = (user.credits || 0) + credits * quantity;
+        await supabase
+          .from('user_profiles')
+          .update({ credits: newCredits })
+          .eq('id', user.id);
+          
+        console.log(`Credits updated for user ${email}: +${credits * quantity}`);
+      } catch (err) {
+        console.error('Failed to update credits:', err.message);
+      }
+    }
+  }
+  
+  res.status(200).end();
+});
+
+// Stripe session status route
+app.get('/api/auth/session-status', async (req, res) => {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  
+  const { session_id } = req.query;
+  if (!session_id) return res.status(400).json({ error: 'Missing session_id' });
+  
+  try {
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    res.status(200).json({
+      status: session.status,
+      customer_email: session.customer_details?.email,
+      plan: session.metadata?.plan,
+      credits: session.metadata?.credits,
+      quantity: session.metadata?.quantity,
+    });
+  } catch (err) {
+    console.error('Session status error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Image editing generation route (protected)
+app.post('/api/auth/generate-image-edit', authenticateUser, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
     return res.status(400).json({ error: 'No image file uploaded' });
@@ -404,44 +534,44 @@ app.post('/generate-headshot', authenticateUser, upload.single('image'), async (
     fs.unlinkSync(req.file.path);
     return res.status(400).json({ 
     error: 'Insufficient credits', 
-    message: 'You need at least 1 credit to generate a headshot. Please purchase more credits.' 
+    message: 'You need at least 1 credit to edit an image. Please purchase more credits.' 
     });
     }
 
-    const { gender = 'none', background = 'neutral', aspectRatio = '1:1', seed } = req.body;
+    const { prompt, outputFormat = 'jpg' } = req.body;
 
-    console.log('Processing headshot generation for user:', req.user.email);
+    if (!prompt || prompt.trim() === '') {
+    // Clean up uploaded file
+    fs.unlinkSync(req.file.path);
+    return res.status(400).json({ error: 'Prompt is required for image editing' });
+    }
+
+    console.log('Processing image editing for user:', req.user.email);
     console.log('File:', req.file.filename);
-    console.log('Parameters:', { gender, background, aspectRatio, seed });
+    console.log('Parameters:', { prompt, outputFormat });
 
     // Convert uploaded file to data URI
     const imageBuffer = fs.readFileSync(req.file.path);
     const imageDataUri = `data:${req.file.mimetype};base64,${imageBuffer.toString('base64')}`;
 
-    // Prepare input for the model
+    // Prepare input for the Flux Kontext Pro model
     const input = {
+    prompt: prompt.trim(),
     input_image: imageDataUri,
-    gender: gender,
-    background: background,
-    aspect_ratio: aspectRatio
+    output_format: outputFormat
     };
-
-    // Add seed if provided
-    if (seed && seed.trim() !== '') {
-    input.seed = parseInt(seed);
-    }
 
     console.log('Sending request to Replicate...');
 
-    // Run the model
-    const output = await replicate.run("flux-kontext-apps/professional-headshot", { input });
+    // Run the Flux Kontext Pro model
+    const output = await replicate.run("black-forest-labs/flux-kontext-pro", { input });
 
     // Deduct credit from user
     const { data: creditUpdate, error: creditError } = await supabase.rpc('update_user_credits', {
     user_uuid: req.user.id,
     credit_change: -1,
     transaction_type: 'usage',
-    description: 'Generated professional headshot'
+    description: 'Generated image edit'
     });
 
     if (creditError) {
@@ -450,11 +580,11 @@ app.post('/generate-headshot', authenticateUser, upload.single('image'), async (
 
     // Log the generation
     await supabase
-    .from('headshot_generations')
+    .from('image_edits')
     .insert({
     user_id: req.user.id,
     image_url: output,
-    parameters: { gender, background, aspectRatio, seed },
+    parameters: { prompt, outputFormat },
     credits_used: 1,
     status: 'completed'
     });
@@ -462,16 +592,16 @@ app.post('/generate-headshot', authenticateUser, upload.single('image'), async (
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);
 
-    console.log('Headshot generated successfully');
+    console.log('Image edit generated successfully');
     res.json({ 
     success: true, 
     imageUrl: output,
-    message: 'Professional headshot generated successfully!',
+    message: 'Image edited successfully!',
     creditsRemaining: req.user.credits - 1
     });
 
   } catch (error) {
-    console.error('Error generating headshot:', error);
+    console.error('Error generating image edit:', error);
 
     // Clean up uploaded file if it exists
     if (req.file && fs.existsSync(req.file.path)) {
@@ -481,7 +611,7 @@ app.post('/generate-headshot', authenticateUser, upload.single('image'), async (
     // Log failed generation
     if (req.user) {
     await supabase
-    .from('headshot_generations')
+    .from('image_edits')
     .insert({
     user_id: req.user.id,
     parameters: req.body,
@@ -491,7 +621,7 @@ app.post('/generate-headshot', authenticateUser, upload.single('image'), async (
     }
 
     res.status(500).json({ 
-    error: 'Failed to generate headshot', 
+    error: 'Failed to edit image', 
     details: error.message 
     });
   }
@@ -499,10 +629,10 @@ app.post('/generate-headshot', authenticateUser, upload.single('image'), async (
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Professional Headshot API is running' });
+  res.json({ status: 'OK', message: 'AI Image Editor API is running' });
 });
 
 app.listen(port, () => {
-  console.log(`Professional Headshot App running at http://localhost:${port}`);
+  console.log(`AI Image Editor App running at http://localhost:${port}`);
   console.log('Make sure to set your REPLICATE_API_TOKEN and Supabase credentials in the .env file');
 });

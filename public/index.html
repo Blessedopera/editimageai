@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Headshot Generator</title>
+    <title>AI Image Editor</title>
     <style>
     * {
     margin: 0;
@@ -165,7 +165,8 @@
     }
 
     .form-group input,
-    .form-group select {
+    .form-group select,
+    .form-group textarea {
     width: 100%;
     padding: 12px;
     border: 2px solid #e1e5e9;
@@ -175,9 +176,16 @@
     }
 
     .form-group input:focus,
-    .form-group select:focus {
+    .form-group select:focus,
+    .form-group textarea:focus {
     outline: none;
     border-color: #4facfe;
+    }
+
+    .form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
     }
 
     .auth-btn {
@@ -598,8 +606,8 @@
 <body>
     <div class="container">
     <div class="header">
-    <h1>🎯 Professional Headshot Generator</h1>
-    <p>Transform any photo into a stunning professional headshot using AI</p>
+    <h1>🎨 AI Image Editor</h1>
+    <p>Transform any image using natural language prompts with advanced AI</p>
 
     <div class="user-info" id="userInfo" style="display: none;">
     <div class="credits-display" id="creditsDisplay">
@@ -611,7 +619,7 @@
     </div>
     <div class="dropdown-menu" id="userDropdown">
     <div class="dropdown-item" onclick="showDashboard()">📊 Dashboard</div>
-    <div class="dropdown-item" onclick="showGenerator()">🎯 Generator</div>
+    <div class="dropdown-item" onclick="showGenerator()">🎨 Editor</div>
     <div class="dropdown-item" onclick="showBuyCredits()">💎 Buy Credits</div>
     <div class="dropdown-item" onclick="logout()">🚪 Logout</div>
     </div>
@@ -683,16 +691,16 @@
     </div>
 
     <div class="dashboard-card">
-    <h3>Total Generated</h3>
+    <h3>Total Edited</h3>
     <div class="number" id="totalGenerated">0</div>
-    <p>Professional headshots created</p>
+    <p>Images edited with AI</p>
     </div>
     </div>
 
     <div class="history-section">
-    <h3>Recent Generations</h3>
+    <h3>Recent Edits</h3>
     <div id="historyList">
-    <p style="text-align: center; color: #666; padding: 40px;">No headshots generated yet. Start creating!</p>
+    <p style="text-align: center; color: #666; padding: 40px;">No images edited yet. Start creating!</p>
     </div>
     </div>
     </div>
@@ -700,8 +708,8 @@
     <!-- Main Generator Section -->
     <div class="main-content" id="mainContent">
     <div class="upload-section">
-    <h2>Upload Your Photo</h2>
-    <form id="headshotForm" enctype="multipart/form-data">
+    <h2>Upload Your Image</h2>
+    <form id="imageEditForm" enctype="multipart/form-data">
     <div class="upload-area" id="uploadArea">
     <div class="upload-icon">📸</div>
     <h3>Drop your image here or click to browse</h3>
@@ -711,57 +719,35 @@
     <div id="imagePreview"></div>
 
     <div class="form-group">
-    <label for="gender">Gender (Optional)</label>
-    <select id="gender" name="gender">
-    <option value="none">Auto-detect</option>
-    <option value="male">Male</option>
-    <option value="female">Female</option>
-    </select>
+    <label for="prompt">Edit Prompt</label>
+    <textarea id="prompt" name="prompt" placeholder="Describe how you want to edit the image (e.g., 'Make this a 90s cartoon', 'Change the background to a beach', 'Make it black and white')" rows="4" required></textarea>
     </div>
 
     <div class="form-group">
-    <label for="background">Background Style</label>
-    <select id="background" name="background">
-    <option value="neutral">Neutral</option>
-    <option value="white">White</option>
-    <option value="black">Black</option>
-    <option value="gray">Gray</option>
-    <option value="office">Office</option>
+    <label for="outputFormat">Output Format</label>
+    <select id="outputFormat" name="outputFormat">
+    <option value="jpg">JPEG</option>
+    <option value="png">PNG</option>
+    <option value="webp">WebP</option>
     </select>
-    </div>
-
-    <div class="form-group">
-    <label for="aspectRatio">Aspect Ratio</label>
-    <select id="aspectRatio" name="aspectRatio">
-    <option value="1:1">Square (1:1)</option>
-    <option value="4:3">Standard (4:3)</option>
-    <option value="3:4">Portrait (3:4)</option>
-    <option value="16:9">Wide (16:9)</option>
-    <option value="9:16">Tall (9:16)</option>
-    </select>
-    </div>
-
-    <div class="form-group">
-    <label for="seed">Seed (Optional)</label>
-    <input type="number" id="seed" name="seed" placeholder="Leave empty for random results">
     </div>
 
     <button type="submit" class="generate-btn" id="generateBtn">
-    Generate Professional Headshot (1 Credit)
+    Edit Image (1 Credit)
     </button>
     </form>
     </div>
 
     <div class="result-section">
-    <h2>Your Professional Headshot</h2>
+    <h2>Your Edited Image</h2>
     <div class="result-area" id="resultArea">
     <div class="loading" id="loading">
     <div class="spinner"></div>
-    <p>Generating your professional headshot...</p>
+    <p>Editing your image...</p>
     <p><small>This may take 10-30 seconds</small></p>
     </div>
     <div id="resultContent">
-    <p>Your generated headshot will appear here</p>
+    <p>Your edited image will appear here</p>
     </div>
     </div>
     </div>
@@ -771,8 +757,8 @@
     <div class="modal" id="buyCreditsModal">
     <div class="modal-content">
     <span class="modal-close" onclick="closeBuyCredits()">&times;</span>
-    <h2>💎 Buy Credits</h2>
-    <p style="margin-bottom: 20px; color: #666;">Choose a plan that works for you</p>
+    <h2>💎 Buy Credits (TEST MODE)</h2>
+    <p style="margin-bottom: 20px; color: #666;">Choose a plan - No payment required for testing</p>
 
     <div class="credit-plans">
     <div class="credit-plan" data-plan="starter" data-credits="25" data-price="9.99">
@@ -810,7 +796,7 @@
     </div>
 
     <button class="purchase-btn" id="purchaseBtn" onclick="purchaseCredits()" disabled>
-    Select a Plan
+    Select a Plan (TEST MODE - No Payment)
     </button>
     <div id="purchaseMessage"></div>
     <div id="stripeCheckout" style="margin-top: 30px;"></div>
@@ -835,7 +821,7 @@
     const uploadArea = document.getElementById('uploadArea');
     const imageInput = document.getElementById('imageInput');
     const imagePreview = document.getElementById('imagePreview');
-    const form = document.getElementById('headshotForm');
+    const form = document.getElementById('imageEditForm');
 
     uploadArea.addEventListener('click', () => imageInput.click());
     uploadArea.addEventListener('dragover', (e) => {
@@ -862,7 +848,7 @@
     });
 
     // Form submission
-    form.addEventListener('submit', generateHeadshot);
+    form.addEventListener('submit', generateImageEdit);
 
     // Credit plan selection
     document.querySelectorAll('.credit-plan').forEach(plan => {
@@ -1088,7 +1074,7 @@
     price: parseFloat(planElement.dataset.price)
     };
 
-    document.getElementById('purchaseBtn').textContent = `Purchase ${selectedPlan.credits} Credits - $${selectedPlan.price}`;
+    document.getElementById('purchaseBtn').textContent = `Purchase ${selectedPlan.credits} Credits (TEST MODE)`;
     document.getElementById('purchaseBtn').disabled = false;
     }
 
@@ -1097,38 +1083,49 @@
     const messageDiv = document.getElementById('purchaseMessage');
     const purchaseBtn = document.getElementById('purchaseBtn');
     const quantity = parseInt(document.getElementById('creditQuantity').value) || 1;
+    const totalCredits = selectedPlan.credits * quantity;
+    
     purchaseBtn.disabled = true;
     purchaseBtn.textContent = 'Processing...';
     messageDiv.innerHTML = '';
     document.getElementById('stripeCheckout').innerHTML = '';
+    
     try {
-    const response = await fetch('/api/auth/create-checkout-session', {
+    const response = await fetch('/api/auth/purchase', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({
-    plan: selectedPlan.name,
-    quantity,
-    email: currentUser?.email
+    amount: totalCredits,
+    plan: selectedPlan.name
     })
     });
+    
     const data = await response.json();
-    if (data.clientSecret) {
-    // Mount Stripe embedded checkout
-    const stripe = Stripe('pk_test_51OEhsXC5gE6T33JWgEV9xpVm24wbBsvJ4bRhzYBeGEm4DzeEvv15dionWp3irugJn3WxK8PHZbK2sEIAUOhSBfmh00PPj1AuOC');
-    const fetchClientSecret = async () => data.clientSecret;
-    const checkout = await stripe.initEmbeddedCheckout({ fetchClientSecret });
-    checkout.mount('#stripeCheckout');
-    purchaseBtn.textContent = 'Complete Payment Below';
+    
+    if (data.success) {
+    // Update user credits
+    currentUser.credits = data.newBalance;
+    document.getElementById('creditsCount').textContent = currentUser.credits;
+    document.getElementById('dashboardCredits').textContent = currentUser.credits;
+    
+    showMessage(messageDiv, data.message, 'success');
+    purchaseBtn.textContent = 'Purchase Complete!';
+    
+    // Close modal after 2 seconds
+    setTimeout(() => {
+    closeBuyCredits();
+    }, 2000);
     } else {
-    showMessage(messageDiv, data.error || 'Failed to start payment.', 'error');
+    showMessage(messageDiv, data.error || 'Failed to purchase credits.', 'error');
     purchaseBtn.disabled = false;
-    purchaseBtn.textContent = `Purchase ${selectedPlan.credits} Credits - $${selectedPlan.price}`;
+    purchaseBtn.textContent = `Purchase ${selectedPlan.credits} Credits (TEST MODE)`;
     }
     } catch (error) {
     console.error('Purchase error:', error);
     showMessage(messageDiv, 'Purchase failed. Please try again.', 'error');
     purchaseBtn.disabled = false;
-    purchaseBtn.textContent = `Purchase ${selectedPlan.credits} Credits - $${selectedPlan.price}`;
+    purchaseBtn.textContent = `Purchase ${selectedPlan.credits} Credits (TEST MODE)`;
     }
     }
 
@@ -1143,16 +1140,22 @@
     reader.readAsDataURL(file);
     }
 
-    async function generateHeadshot(e) {
+    async function generateImageEdit(e) {
     e.preventDefault();
 
     const imageInput = document.getElementById('imageInput');
+    const promptInput = document.getElementById('prompt');
     const generateBtn = document.getElementById('generateBtn');
     const loading = document.getElementById('loading');
     const resultContent = document.getElementById('resultContent');
 
     if (!imageInput.files[0]) {
     alert('Please select an image first!');
+    return;
+    }
+
+    if (!promptInput.value.trim()) {
+    alert('Please enter an edit prompt!');
     return;
     }
 
@@ -1164,19 +1167,17 @@
 
     const formData = new FormData();
     formData.append('image', imageInput.files[0]);
-    formData.append('gender', document.getElementById('gender').value);
-    formData.append('background', document.getElementById('background').value);
-    formData.append('aspectRatio', document.getElementById('aspectRatio').value);
-    formData.append('seed', document.getElementById('seed').value);
+    formData.append('prompt', promptInput.value.trim());
+    formData.append('outputFormat', document.getElementById('outputFormat').value);
 
     // Show loading state
     generateBtn.disabled = true;
-    generateBtn.textContent = 'Generating...';
+    generateBtn.textContent = 'Editing...';
     loading.style.display = 'flex';
     resultContent.innerHTML = '';
 
     try {
-    const response = await fetch('/api/auth/generate-headshot', {
+    const response = await fetch('/api/auth/generate-image-edit', {
     method: 'POST',
     credentials: 'include',
     body: formData
@@ -1186,9 +1187,9 @@
 
     if (result.success) {
     resultContent.innerHTML = `
-    <img src="${result.imageUrl}" alt="Professional Headshot" class="result-image">
+    <img src="${result.imageUrl}" alt="Edited Image" class="result-image">
     <button class="download-btn" onclick="downloadImage('${result.imageUrl}')">
-    Download Headshot
+    Download Edited Image
     </button>
     <div class="success">${result.message}</div>
     `;
@@ -1221,7 +1222,7 @@
     // Hide loading state
     loading.style.display = 'none';
     generateBtn.disabled = false;
-    generateBtn.textContent = 'Generate Professional Headshot (1 Credit)';
+    generateBtn.textContent = 'Edit Image (1 Credit)';
     }
     }
 
@@ -1245,13 +1246,13 @@
     const historyList = document.getElementById('historyList');
 
     if (history.length === 0) {
-    historyList.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">No headshots generated yet. Start creating!</p>';
+    historyList.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">No images edited yet. Start creating!</p>';
     return;
     }
 
     historyList.innerHTML = history.map(item => `
     <div class="history-item">
-    <img src="${item.image_url}" alt="Headshot" class="history-image">
+    <img src="${item.image_url}" alt="Edited Image" class="history-image">
     <div class="history-details">
     <p class="history-date">${new Date(item.created_at).toLocaleString()}</p>
     <p class="history-params">${formatParams(item.parameters)}</p>

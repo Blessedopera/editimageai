@@ -1,12 +1,14 @@
 {
-  "name": "professional-headshot-app",
+  "name": "ai-image-editor",
   "version": "1.0.0",
-  "description": "Professional headshot generator with user authentication and credits",
+  "description": "AI-powered image editor with user authentication and credits",
   "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "build": "echo 'No build step required'",
+    "vercel-build": "echo 'Vercel build completed'"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.3",

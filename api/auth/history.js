@@ -13,8 +13,8 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'No authentication token provided' });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const { data: generations, error } = await supabase
-      .from('headshot_generations')
+    const { data: edits, error } = await supabase
+      .from('image_edits')
       .select('*')
       .eq('user_id', decoded.userId)
       .order('created_at', { ascending: false })
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     }
     res.status(200).json({
       success: true,
-      history: generations
+      history: edits
     });
   } catch (error) {
     console.error('History fetch error:', error);

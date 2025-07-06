@@ -1,173 +1,148 @@
-# Professional Headshot Generator
+# AI Image Editor
 
-Transform any photo into a professional headshot using AI (Replicate) and Supabase for authentication and credits.
+A powerful web application that allows users to edit images using natural language prompts with the Flux Kontext Pro AI model from Replicate.
 
 ## Features
 
-- 📸 Upload any image (JPG, PNG, WebP, GIF)
-- 🎯 Generate professional headshots with AI
-- 🎨 Customizable backgrounds (neutral, white, black, gray, office)
-- 📐 Multiple aspect ratios (square, portrait, landscape)
-- ⚙️ Optional gender specification for better results
-- 🎲 Seed control for reproducible results
-- 💾 Download generated headshots
-- User signup/login (Supabase Auth)
-- Credit system (Supabase DB)
-- Purchase credits (Stripe integration ready)
-- Dashboard/history
+- **AI-Powered Image Editing**: Transform any image using natural language descriptions
+- **User Authentication**: Secure login/signup system with Supabase
+- **Credit System**: Pay-per-use model with credit management
+- **Dashboard**: Track your editing history and credit usage
+- **Multiple Output Formats**: Support for JPG, PNG, and WebP formats
+- **Real-time Processing**: Fast image editing with progress indicators
 
-## Setup
+## Technology Stack
 
-1. **Clone the repo:**
-   ```sh
-   git clone https://github.com/yourusername/yourrepo.git
-   cd yourrepo
-   ```
-2. **Install dependencies:**
-   ```sh
-   npm install
-   ```
-3. **Create a `.env` file:**
-   Copy `.env.example` to `.env` and fill in your secrets.
-
-4. **Run locally:**
-   ```sh
-   node server_working1.js
-   ```
-   Or use `npm run dev` if you have a dev script.
-
-## Environment Variables
-See `.env.example` for all required variables.
-
-## Deploying to Vercel
-1. Push your code to GitHub.
-2. Go to [vercel.com](https://vercel.com/) and import your repo.
-3. Set all environment variables in the Vercel dashboard (from `.env.example`).
-4. Deploy!
-
-**Note:** If using Express backend, you may need to move your server code to `/api/server.js` for Vercel serverless functions, or deploy backend separately (e.g., Render) and use Vercel for frontend only.
-
-## Stripe Integration (To Do)
-- Add your Stripe keys to `.env` and Vercel.
-- Implement Stripe Checkout on the frontend.
-- Handle Stripe webhooks in `/api/stripe/webhook` to credit users after payment.
+- **Frontend**: HTML, CSS, JavaScript
+- **Backend**: Node.js with Express
+- **Database**: Supabase (PostgreSQL)
+- **AI Model**: Flux Kontext Pro (black-forest-labs/flux-kontext-pro)
+- **Authentication**: JWT with Supabase Auth
+- **Payment Processing**: Stripe
+- **File Upload**: Multer
+- **Deployment**: Vercel
 
 ## Setup Instructions
 
-### 1. Install Dependencies
+### 1. Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Replicate API
+REPLICATE_API_TOKEN=your_replicate_api_token
+
+# Supabase
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_KEY=your_supabase_service_key
+SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# JWT
+JWT_SECRET=your_jwt_secret
+SESSION_SECRET=your_session_secret
+
+# Stripe
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+```
+
+### 2. Database Setup
+
+Run the SQL commands from `database_schema.sql` in your Supabase SQL Editor to create the necessary tables and functions.
+
+### 3. Install Dependencies
+
 ```bash
 npm install
 ```
 
-### 2. Configure Environment
-1. Copy `.env.example` to `.env`
-2. Get your Replicate API token from https://replicate.com/account/api-tokens
-3. Add your token to the `.env` file:
-```
-REPLICATE_API_TOKEN=r8_your_actual_token_here
-```
+### 4. Run the Application
 
-### 3. Run the Application
 ```bash
-# Development mode with auto-reload
-npm run dev
-
-# Production mode
 npm start
 ```
 
-### 4. Access the App
-Open your browser and go to: http://localhost:3000
+The application will be available at `http://localhost:3000`
 
 ## API Endpoints
 
-### POST /generate-headshot
-Generate a professional headshot from an uploaded image.
+### Authentication
+- `POST /auth/signup` - User registration
+- `POST /auth/login` - User login
+- `POST /auth/logout` - User logout
 
-**Parameters:**
-- `image` (file): The input image file
-- `gender` (string): Optional - "male", "female", or "none" (auto-detect)
-- `background` (string): Background style - "neutral", "white", "black", "gray", "office"
-- `aspectRatio` (string): Output ratio - "1:1", "4:3", "3:4", "16:9", "9:16"
-- `seed` (number): Optional - for reproducible results
+### Image Editing
+- `POST /generate-image-edit` - Edit an image with AI
+- `GET /api/user/history` - Get user's editing history
+- `GET /api/user/profile` - Get user profile
 
-**Response:**
-```json
-{
-  "success": true,
-  "imageUrl": "https://...",
-  "message": "Professional headshot generated successfully!"
-}
-```
+### Credits
+- `POST /api/credits/purchase` - Purchase credits
+- `POST /api/auth/create-checkout-session` - Create Stripe checkout session
 
-### GET /health
-Health check endpoint.
+## Usage
 
-## Usage Tips
+1. **Sign up/Login**: Create an account or sign in to get started
+2. **Upload Image**: Select an image file (JPG, PNG, WebP, GIF up to 10MB)
+3. **Enter Prompt**: Describe how you want to edit the image (e.g., "Make this a 90s cartoon", "Change the background to a beach")
+4. **Select Format**: Choose your preferred output format
+5. **Generate**: Click "Edit Image" to process your request (costs 1 credit)
+6. **Download**: Save your edited image
 
-1. **Best Input Images:**
-   - Clear, front-facing photos
-   - Good lighting
-   - Minimal background distractions
-   - No sunglasses or hats
+## Credit System
 
-2. **Background Options:**
-   - **Neutral**: Professional gray/beige tones
-   - **White**: Clean white background
-   - **Black**: Dramatic black background
-   - **Gray**: Professional gray background
-   - **Office**: Corporate office setting
+- New users receive 10 free credits
+- Each image edit costs 1 credit
+- Credits can be purchased through various plans:
+  - Starter: 25 credits for $9.99
+  - Popular: 60 credits for $19.99
+  - Professional: 150 credits for $39.99
+  - Business: 300 credits for $69.99
 
-3. **Aspect Ratios:**
-   - **1:1 (Square)**: Perfect for social media profiles
-   - **4:3 (Standard)**: Traditional headshot format
-   - **3:4 (Portrait)**: Vertical orientation
-   - **16:9 (Wide)**: Landscape format
-   - **9:16 (Tall)**: Mobile-friendly vertical
+## Database Schema
 
-## Technology Stack
+### Tables
+- `user_profiles`: User information and credit balance
+- `image_edits`: Image editing history and results
+- `credit_transactions`: Credit purchase and usage tracking
 
-- **Backend**: Node.js, Express.js
-- **AI Model**: FLUX Kontext Professional Headshot (via Replicate)
-- **File Upload**: Multer
-- **Frontend**: Vanilla HTML/CSS/JavaScript
+### Functions
+- `handle_new_user()`: Automatically creates user profile on signup
+- `update_user_credits()`: Manages credit transactions
 
-## Model Information
+## Deployment
 
-This app uses the `flux-kontext-apps/professional-headshot` model from Replicate, which is powered by FLUX.1 Kontext Pro. The model specializes in:
+### Vercel Deployment
 
-- Converting casual photos to professional headshots
-- Maintaining facial identity while enhancing presentation
-- Adjusting lighting, composition, and backgrounds
-- Generating studio-quality results
+1. Connect your GitHub repository to Vercel
+2. Set up environment variables in Vercel dashboard
+3. Deploy automatically on push to main branch
 
-## Security Notes
+### Environment Variables for Production
 
-- API tokens are stored in environment variables
-- Uploaded files are temporarily stored and automatically deleted
-- File type validation prevents malicious uploads
-- 10MB file size limit for uploads
+Make sure to set all required environment variables in your Vercel project settings.
 
-## Troubleshooting
+## Security Features
 
-### Common Issues:
+- JWT-based authentication
+- Row Level Security (RLS) in Supabase
+- Secure file upload validation
+- Credit system to prevent abuse
+- Input validation and sanitization
 
-1. **"No API token" error**: Make sure your `.env` file contains a valid `REPLICATE_API_TOKEN`
-2. **File upload fails**: Check file size (max 10MB) and format (JPG, PNG, WebP, GIF)
-3. **Generation takes too long**: The AI model typically takes 10-30 seconds to process
-4. **Poor results**: Try using clearer, front-facing photos with good lighting
+## Contributing
 
-### Error Codes:
-- `400`: Bad request (missing image or invalid parameters)
-- `500`: Server error (API issues or processing failures)
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ## License
 
-This project is for educational and commercial use. The FLUX Kontext model can be used commercially according to Replicate's terms.
+This project is licensed under the MIT License.
 
 ## Support
 
-For issues related to:
-- **App functionality**: Check the troubleshooting section above
-- **Replicate API**: Visit https://replicate.com/docs
-- **Model-specific questions**: Check https://replicate.com/flux-kontext-apps/professional-headshot
+For support, please open an issue in the GitHub repository or contact the development team.
