@@ -85,15 +85,15 @@ app.use(session({
 app.use(express.static('public'));
 
 // Configure multer for file uploads
-// Use memory storage for Vercel deployment (no file system writes allowed)
+console.log("Multer storage config:", multer.memoryStorage ? "memoryStorage" : "diskStorage");
 const upload = multer({ 
   storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
     if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
+      cb(null, true);
     } else {
-    cb(new Error('Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed.'));
+      cb(new Error('Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed.'));
     }
   },
   limits: {
@@ -675,4 +675,6 @@ app.get('/test', async (req, res) => {
 app.listen(port, () => {
   console.log(`AI Image Editor App running at http://localhost:${port}`);
   console.log('Make sure to set your REPLICATE_API_TOKEN and Supabase credentials in the .env file');
+  console.log("NODE_ENV:", process.env.NODE_ENV);
+  console.log("Running on Vercel:", !!process.env.VERCEL);
 });
