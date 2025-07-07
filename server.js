@@ -85,21 +85,9 @@ app.use(session({
 app.use(express.static('public'));
 
 // Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = 'uploads/';
-    if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
-});
-
+// Use memory storage for Vercel deployment (no file system writes allowed)
 const upload = multer({ 
-  storage: storage,
+  storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
     if (allowedTypes.includes(file.mimetype)) {
@@ -122,7 +110,7 @@ const authenticateUser = async (req, res, next) => {
     return res.status(401).json({ error: 'No authentication token provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-jwt-secret-for-development');
 
     // Get user from Supabase
     const { data: user, error } = await supabase
@@ -237,7 +225,7 @@ app.post('/api/auth/signup', async (req, res) => {
     // Create JWT token
     const token = jwt.sign(
       { userId: authData.user.id, email: authData.user.email },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'fallback-jwt-secret-for-development',
       { expiresIn: '24h' }
     );
 
@@ -304,7 +292,7 @@ app.post('/api/auth/login', async (req, res) => {
     // Create JWT token
     const token = jwt.sign(
       { userId: authData.user.id, email: authData.user.email },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'fallback-jwt-secret-for-development',
       { expiresIn: '24h' }
     );
 
@@ -556,8 +544,6 @@ app.post('/api/auth/generate-image-edit', authenticateUser, upload.single('image
 
     // Check if user has enough credits
     if (req.user.credits < 1) {
-    // Clean up uploaded file
-    fs.unlinkSync(req.file.path);
     return res.status(400).json({ 
     error: 'Insufficient credits', 
     message: 'You need at least 1 credit to edit an image. Please purchase more credits.' 
@@ -567,18 +553,15 @@ app.post('/api/auth/generate-image-edit', authenticateUser, upload.single('image
     const { prompt, outputFormat = 'jpg' } = req.body;
 
     if (!prompt || prompt.trim() === '') {
-    // Clean up uploaded file
-    fs.unlinkSync(req.file.path);
     return res.status(400).json({ error: 'Prompt is required for image editing' });
     }
 
     console.log('Processing image editing for user:', req.user.email);
-    console.log('File:', req.file.filename);
+    console.log('File:', req.file.originalname);
     console.log('Parameters:', { prompt, outputFormat });
 
-    // Convert uploaded file to data URI
-    const imageBuffer = fs.readFileSync(req.file.path);
-    const imageDataUri = `data:${req.file.mimetype};base64,${imageBuffer.toString('base64')}`;
+    // Convert uploaded file to data URI (from memory buffer)
+    const imageDataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 
     // Prepare input for the Flux Kontext Pro model
     const input = {
@@ -615,9 +598,6 @@ app.post('/api/auth/generate-image-edit', authenticateUser, upload.single('image
     status: 'completed'
     });
 
-    // Clean up uploaded file
-    fs.unlinkSync(req.file.path);
-
     console.log('Image edit generated successfully');
     res.json({ 
     success: true, 
@@ -628,11 +608,6 @@ app.post('/api/auth/generate-image-edit', authenticateUser, upload.single('image
 
   } catch (error) {
     console.error('Error generating image edit:', error);
-
-    // Clean up uploaded file if it exists
-    if (req.file && fs.existsSync(req.file.path)) {
-    fs.unlinkSync(req.file.path);
-    }
 
     // Log failed generation
     if (req.user) {
@@ -671,6 +646,30 @@ app.get('/health', (req, res) => {
     environment: envStatus,
     timestamp: new Date().toISOString()
   });
+});
+
+// Test endpoint for debugging
+app.get('/test', async (req, res) => {
+  try {
+    // Test Supabase connection
+    const { data, error } = await supabase.from('user_profiles').select('count').limit(1);
+    
+    res.json({
+      message: 'Test endpoint working',
+      supabase: error ? { error: error.message } : { connected: true, data },
+      env: {
+        hasSupabaseUrl: !!process.env.SUPABASE_URL,
+        hasSupabaseKey: !!process.env.SUPABASE_SERVICE_KEY,
+        hasAnonKey: !!process.env.SUPABASE_ANON_KEY
+      }
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: 'Test failed',
+      message: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+  }
 });
 
 app.listen(port, () => {
