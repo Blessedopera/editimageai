@@ -14,6 +14,23 @@ import Stripe from 'stripe';
 
 dotenv.config();
 
+// Validate required environment variables
+const requiredEnvVars = [
+  'REPLICATE_API_TOKEN',
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_KEY',
+  'SUPABASE_ANON_KEY',
+  'JWT_SECRET'
+];
+
+const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingVars.length > 0) {
+  console.error('❌ Missing required environment variables:', missingVars.join(', '));
+  console.error('Please set these variables in your Vercel dashboard or .env file');
+  process.exit(1);
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -57,7 +74,7 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 app.use(session({
-  secret: process.env.SESSION_SECRET,
+  secret: process.env.SESSION_SECRET || 'fallback-secret-for-development',
   resave: false,
   saveUninitialized: false,
   cookie: { 
@@ -136,6 +153,8 @@ app.get('/', (req, res) => {
 // Authentication routes
 app.post('/api/auth/signup', async (req, res) => {
   try {
+    console.log('Signup attempt:', { email: req.body.email, hasPassword: !!req.body.password });
+    
     const { email, password, fullName } = req.body;
 
     if (!email || !password) {
@@ -143,6 +162,7 @@ app.post('/api/auth/signup', async (req, res) => {
     }
 
     // Create user in Supabase Auth (regular signup, not admin, use anon client)
+    console.log('Attempting Supabase signup...');
     const { data: authData, error: authError } = await supabaseAnon.auth.signUp({
       email,
       password,
@@ -152,9 +172,11 @@ app.post('/api/auth/signup', async (req, res) => {
     });
 
     if (authError) {
-      console.error('Signup error:', authError);
+      console.error('Supabase signup error:', authError);
       return res.status(400).json({ error: authError.message });
     }
+    
+    console.log('Supabase signup successful:', authData.user?.id);
 
     // Force email verification using admin API
     if (authData.user && !authData.user.email_confirmed_at) {
@@ -242,7 +264,11 @@ app.post('/api/auth/signup', async (req, res) => {
 
   } catch (error) {
     console.error('Signup error:', error);
-    res.status(500).json({ error: 'Failed to create account' });
+    res.status(500).json({ 
+      error: 'Failed to create account',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -629,7 +655,22 @@ app.post('/api/auth/generate-image-edit', authenticateUser, upload.single('image
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'AI Image Editor API is running' });
+  const envStatus = {
+    REPLICATE_API_TOKEN: !!process.env.REPLICATE_API_TOKEN,
+    SUPABASE_URL: !!process.env.SUPABASE_URL,
+    SUPABASE_SERVICE_KEY: !!process.env.SUPABASE_SERVICE_KEY,
+    SUPABASE_ANON_KEY: !!process.env.SUPABASE_ANON_KEY,
+    JWT_SECRET: !!process.env.JWT_SECRET,
+    SESSION_SECRET: !!process.env.SESSION_SECRET,
+    NODE_ENV: process.env.NODE_ENV
+  };
+  
+  res.json({ 
+    status: 'OK', 
+    message: 'AI Image Editor API is running',
+    environment: envStatus,
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.listen(port, () => {
