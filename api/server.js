@@ -52,21 +52,9 @@ app.use(session({
 app.use(express.static('public'));
 
 // Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = 'uploads/';
-    if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
-});
-
+// Use memory storage for Vercel deployment (no file system writes allowed)
 const upload = multer({ 
-  storage: storage,
+  storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
     if (allowedTypes.includes(file.mimetype)) {
@@ -89,7 +77,7 @@ const authenticateUser = async (req, res, next) => {
     return res.status(401).json({ error: 'No authentication token provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-jwt-secret-for-development');
 
     // Get user from Supabase
     const { data: user, error } = await supabase
@@ -199,7 +187,7 @@ app.post('/auth/signup', async (req, res) => {
     // Create JWT token
     const token = jwt.sign(
       { userId: authData.user.id, email: authData.user.email },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'fallback-jwt-secret-for-development',
       { expiresIn: '24h' }
     );
 
@@ -262,7 +250,7 @@ app.post('/auth/login', async (req, res) => {
     // Create JWT token
     const token = jwt.sign(
       { userId: authData.user.id, email: authData.user.email },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'fallback-jwt-secret-for-development',
       { expiresIn: '24h' }
     );
 
@@ -400,8 +388,6 @@ app.post('/generate-headshot', authenticateUser, upload.single('image'), async (
 
     // Check if user has enough credits
     if (req.user.credits < 1) {
-    // Clean up uploaded file
-    fs.unlinkSync(req.file.path);
     return res.status(400).json({ 
     error: 'Insufficient credits', 
     message: 'You need at least 1 credit to generate a headshot. Please purchase more credits.' 
@@ -411,12 +397,11 @@ app.post('/generate-headshot', authenticateUser, upload.single('image'), async (
     const { gender = 'none', background = 'neutral', aspectRatio = '1:1', seed } = req.body;
 
     console.log('Processing headshot generation for user:', req.user.email);
-    console.log('File:', req.file.filename);
+    console.log('File:', req.file.originalname);
     console.log('Parameters:', { gender, background, aspectRatio, seed });
 
-    // Convert uploaded file to data URI
-    const imageBuffer = fs.readFileSync(req.file.path);
-    const imageDataUri = `data:${req.file.mimetype};base64,${imageBuffer.toString('base64')}`;
+    // Convert uploaded file to data URI (from memory buffer)
+    const imageDataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 
     // Prepare input for the model
     const input = {
@@ -459,9 +444,6 @@ app.post('/generate-headshot', authenticateUser, upload.single('image'), async (
     status: 'completed'
     });
 
-    // Clean up uploaded file
-    fs.unlinkSync(req.file.path);
-
     console.log('Headshot generated successfully');
     res.json({ 
     success: true, 
@@ -472,11 +454,6 @@ app.post('/generate-headshot', authenticateUser, upload.single('image'), async (
 
   } catch (error) {
     console.error('Error generating headshot:', error);
-
-    // Clean up uploaded file if it exists
-    if (req.file && fs.existsSync(req.file.path)) {
-    fs.unlinkSync(req.file.path);
-    }
 
     // Log failed generation
     if (req.user) {
@@ -502,8 +479,4 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Professional Headshot API is running' });
 });
 
-<<<<<<< HEAD
 export default app;
-=======
-export default app;
->>>>>>> 34456be06afe32ea843ef5b8114cbcc3c9f5b880
